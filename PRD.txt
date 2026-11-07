@@ -1,0 +1,61 @@
+Act as an elite full-stack software engineer. Build a complete, lightweight, production-quality Personal Keep-Alive & Uptime Pinger Web Application designed to be hosted on Render.
+
+### 1. TECH STACK & ARCHITECTURE
+- **Backend:** Node.js with Express.js
+- **Database/Storage:** MongoDB (via Mongoose) or NeDB/Lowdb/SQLite (configured for easy cloud connection like MongoDB Atlas URI via environment variable `MONGO_URI`, with an in-memory or local JSON fallback).
+- **Frontend:** Single-page dashboard built with vanilla JavaScript, modern CSS3 (Dark Glassmorphism aesthetic, responsive, mobile touch-friendly), and FontAwesome/Lucide icons.
+- **Pinger Engine:** Dynamic in-memory scheduling using `setInterval` or `node-cron` with an asynchronous worker loop so slow pings never block other jobs.
+
+---
+
+### 2. CORE FEATURES & FUNCTIONALITIES
+
+1. **Self-Pinger (Keep Render Awake):**
+   - The app must read its own public URL from an environment variable (`APP_URL`, e.g., `https://my-app.onrender.com`).
+   - Ping its own `/api/healthz` endpoint every 10–13 minutes to prevent Render's free tier from spinning down.
+
+2. **Multi-Target URL Manager:**
+   - Add, edit, pause/resume, and delete target websites.
+   - Fields per target: `Name`, `Target URL`, `Interval` (1m, 2m, 5m, 10m, 15m, 30m, 1h), `HTTP Method` (HEAD or GET).
+   - Manual "Ping Now" action button for immediate test without resetting the interval schedule.
+
+3. **Real-time Live Dashboard & Timers:**
+   - Real-time countdown timer for each target showing when the next ping will execute (e.g., "Next ping in: 00:43").
+   - Stats per target: Last ping timestamp, HTTP status code (200 OK, 404, 500, Timeout), response latency in ms, and total successful/failed ping count.
+   - Visual status badges: Green (Active/200), Yellow (Degraded/High Latency), Red (Down/Error), Gray (Paused).
+   - Global metrics at the top: Total Targets, Active Pings, Total Requests Sent, Average Response Time.
+
+4. **Authentication & Session Persistence (No Auto-Logout):**
+   - Single Master Password system. Read the master password from an environment variable: `AUTH_MASTER_KEY` (Default to "ARAFAT168642" if not explicitly set).
+   - Use an Express rate-limiter on the `/api/login` route to prevent brute-force attacks (max 5 failed attempts per 15 mins).
+   - On valid login, generate a cryptographically signed, long-lived JWT or secure authentication token with NO expiration (or 10 years expiration).
+   - Store the token on the client-side (`localStorage`) and auto-attach it to API requests via the `Authorization: Bearer <token>` header.
+   - **Crucial Rule:** The user must NEVER be logged out automatically upon page refresh or closing the browser. The session must stay active indefinitely until the user explicitly clicks the "Logout" button.
+
+---
+
+### 3. UI/UX DESIGN SPECIFICATIONS
+- **Theme:** Modern Dark Glassmorphism. Deep dark background (`#0B0F19`), translucent card panels with `backdrop-filter: blur(12px)`, subtle borders (`rgba(255, 255, 255, 0.08)`), glowing accent colors (cyan/neon green/violet), and smooth transitions.
+- **Layout:**
+  - Header: App Title, Status Indicator, Total Ping Counter, and a "Logout" button.
+  - Quick Add Bar: Input field for URL, Name, Interval dropdown, and "Add Target" button.
+  - Target Grid/List: Cards displaying target status, live ticking countdown, latency meter, and control buttons (Pause, Edit, Ping Now, Delete).
+  - Recent Activity / Logs drawer: A toggleable collapsible panel showing the last 50 ping logs (Timestamp, Target, Status, Latency).
+
+---
+
+### 4. API SPECIFICATIONS
+- `POST /api/login` - Validates password against `process.env.AUTH_MASTER_KEY`. Returns persistent token.
+- `GET /api/targets` - Returns all targets with their current status, last ping time, next ping time, and stats.
+- `POST /api/targets` - Adds a new target and initiates its schedule.
+- `PUT /api/targets/:id` - Updates target interval or pause/resume state.
+- `DELETE /api/targets/:id` - Removes target and stops its scheduler.
+- `POST /api/targets/:id/ping` - Triggers an immediate manual ping.
+- `GET /api/healthz` - Lightweight public endpoint for self-pinging and uptime checks.
+
+---
+
+### 5. IMPLEMENTATION RULES
+- Provide the complete, working code across clean, modular files (`server.js`, `pinger.js`, `public/index.html`, `public/style.css`, `public/app.js`, `package.json`, and `.env.example`).
+- Ensure graceful error handling (e.g., DNS failures, request timeouts should not crash the server).
+- Include clear instructions on how to deploy to Render and set the Environment Variables.
