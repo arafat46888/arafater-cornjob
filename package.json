@@ -1,0 +1,28 @@
+{
+  "name": "keepalive-pinger",
+  "version": "1.0.0",
+  "description": "Personal Keep-Alive & Uptime Pinger — lightweight dashboard that pings your services to keep them awake (Render free tier friendly).",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "uptime",
+    "pinger",
+    "keep-alive",
+    "monitoring",
+    "render"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "express-rate-limit": "^7.4.0",
+    "lowdb": "^7.0.1",
+    "mongoose": "^8.5.0"
+  }
+}
