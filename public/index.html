@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0F19" />
+  <title>PulseKeep — Keep-Alive & Uptime Pinger</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <!-- Lucide icons (UMD build from CDN; app degrades gracefully if offline) -->
+  <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- ======================= LOGIN VIEW ======================= -->
+  <section id="login-view" class="view hidden" aria-label="Login">
+    <div class="login-card glass">
+      <div class="login-logo"><i data-lucide="zap"></i></div>
+      <h1>PulseKeep</h1>
+      <p class="muted">Keep-Alive &amp; Uptime Pinger</p>
+      <form id="login-form" autocomplete="off">
+        <div class="field">
+          <label for="password">Master Password</label>
+          <input id="password" type="password" name="password" placeholder="••••••••••••"
+                 autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="login-btn" class="btn btn-primary w-full">
+          <i data-lucide="log-in"></i><span>Unlock Dashboard</span>
+        </button>
+        <p id="login-error" class="error-text hidden"></p>
+      </form>
+      <p class="tiny muted lock-note"><i data-lucide="lock"></i> Session persists forever until you log out.</p>
+    </div>
+  </section>
+
+  <!-- ======================= DASHBOARD VIEW ======================= -->
+  <section id="dash-view" class="view hidden" aria-label="Dashboard">
+
+    <!-- Header -->
+    <header class="topbar glass">
+      <div class="brand">
+        <span class="brand-icon"><i data-lucide="zap"></i></span>
+        <div>
+          <h1>PulseKeep</h1>
+          <div class="status-line">
+            <span id="conn-dot" class="dot dot-green" title="Connection"></span>
+            <span id="conn-label" class="muted tiny">Live</span>
+            <span class="sep">·</span>
+            <span id="server-clock" class="mono tiny muted">--:--:--</span>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="ping-counter glass-inner" title="Total requests sent by this instance">
+          <i data-lucide="activity"></i>
+          <span id="hdr-pings" class="mono">0</span>
+          <span class="tiny muted">pings</span>
+        </div>
+        <button id="logout-btn" class="btn btn-ghost" title="Logout">
+          <i data-lucide="log-out"></i><span class="hide-sm">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+
+      <!-- Global metrics -->
+      <section class="metrics-grid" aria-label="Global metrics">
+        <div class="metric glass">
+          <i data-lucide="list-todo" class="metric-icon c-cyan"></i>
+          <div><span class="metric-value mono" id="m-total">0</span><span class="metric-label">Total Targets</span></div>
+        </div>
+        <div class="metric glass">
+          <i data-lucide="radar" class="metric-icon c-green"></i>
+          <div><span class="metric-value mono" id="m-active">0</span><span class="metric-label">Active Pings</span></div>
+        </div>
+        <div class="metric glass">
+          <i data-lucide="send" class="metric-icon c-violet"></i>
+          <div><span class="metric-value mono" id="m-sent">0</span><span class="metric-label">Requests Sent</span></div>
+        </div>
+        <div class="metric glass">
+          <i data-lucide="timer" class="metric-icon c-yellow"></i>
+          <div><span class="metric-value mono" id="m-avg">–</span><span class="metric-label">Avg Response</span></div>
+        </div>
+      </section>
+
+      <!-- Quick add bar -->
+      <section class="glass add-bar" aria-label="Add target">
+        <form id="add-form" autocomplete="off">
+          <div class="add-row">
+            <input id="add-url" type="url" placeholder="https://my-service.onrender.com" required aria-label="Target URL" />
+            <input id="add-name" type="text" placeholder="Name (e.g. My API)" maxlength="60" required aria-label="Target name" />
+            <select id="add-interval" aria-label="Ping interval">
+              <option value="60">Every 1 min</option>
+              <option value="120">Every 2 min</option>
+              <option value="300" selected>Every 5 min</option>
+              <option value="600">Every 10 min</option>
+              <option value="900">Every 15 min</option>
+              <option value="1800">Every 30 min</option>
+              <option value="3600">Every 1 hour</option>
+            </select>
+            <select id="add-method" aria-label="HTTP method">
+              <option value="HEAD" selected>HEAD</option>
+              <option value="GET">GET</option>
+            </select>
+            <button type="submit" id="add-btn" class="btn btn-primary">
+              <i data-lucide="plus-circle"></i><span>Add Target</span>
+            </button>
+          </div>
+          <p id="add-error" class="error-text hidden"></p>
+        </form>
+      </section>
+
+      <!-- Targets grid -->
+      <section id="targets-grid" class="targets-grid" aria-label="Targets"></section>
+      <div id="empty-state" class="empty glass hidden">
+        <i data-lucide="satellite-dish"></i>
+        <h3>No targets yet</h3>
+        <p class="muted">Add your first URL above and PulseKeep will keep it awake 24/7.</p>
+      </div>
+
+    </main>
+
+    <!-- Logs drawer -->
+    <aside id="logs-drawer" class="logs-drawer glass" aria-label="Recent activity">
+      <button id="logs-toggle" class="logs-toggle" aria-expanded="false">
+        <i data-lucide="scroll-text"></i>
+        <span>Recent Activity</span>
+        <i data-lucide="chevron-up" class="chev"></i>
+      </button>
+      <div id="logs-body" class="logs-body">
+        <ul id="logs-list" class="logs-list"></ul>
+        <p id="logs-empty" class="muted tiny pad">No ping activity recorded yet.</p>
+      </div>
+    </aside>
+
+    <!-- Edit modal -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal glass" role="dialog" aria-modal="true" aria-label="Edit target">
+        <h3><i data-lucide="pencil"></i> Edit Target</h3>
+        <form id="edit-form" autocomplete="off">
+          <input type="hidden" id="edit-id" />
+          <div class="field"><label for="edit-name">Name</label>
+            <input id="edit-name" type="text" maxlength="60" required /></div>
+          <div class="field"><label for="edit-url">Target URL</label>
+            <input id="edit-url" type="url" required /></div>
+          <div class="row-2">
+            <div class="field"><label for="edit-interval">Interval</label>
+              <select id="edit-interval">
+                <option value="60">1 min</option><option value="120">2 min</option>
+                <option value="300">5 min</option><option value="600">10 min</option>
+                <option value="900">15 min</option><option value="1800">30 min</option>
+                <option value="3600">1 hour</option>
+              </select></div>
+            <div class="field"><label for="edit-method">Method</label>
+              <select id="edit-method"><option value="HEAD">HEAD</option><option value="GET">GET</option></select></div>
+          </div>
+          <p id="edit-error" class="error-text hidden"></p>
+          <div class="modal-actions">
+            <button type="button" id="edit-cancel" class="btn btn-ghost">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="check"></i><span>Save</span></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="foot tiny muted">PulseKeep · self-pinging keeps this instance awake on Render free tier ⚡</footer>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>
